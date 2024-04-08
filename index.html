@@ -2,12 +2,14 @@
 <html>
 	<head>
 		<title> CS 360 Assignments </title>
+		<script src="https://d3js.org/d3.v6.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
 	</head>
 
 	<body>
 		<h1>CS 360 </h1>
 		<h1> Annie Huynh </h1>
-		<h3>Data Visualization Course Assignments</h3>
+		<h3> Data Visualization Course Assignments </h3>
 		<p> Assignment 2 <br>
 			<a href = "https://vizhub.com/Ahuynh111/2f95510669f84d6384cda24fe2f4ba20"> Bar Chart</a>
 			<br>
@@ -57,6 +59,200 @@
 			<a href = "https://vizhub.com/Ahuynh111/602b62e662eb4471ad789be703e200d2"> Proportional Symbols Map in D3</a>
 			<br>
 			<a href = "https://vizhub.com/Ahuynh111/802f4582457045b1919d5c914526c74d"> World Chloropleth Map in D3</a>
+		<p> Assignment 10 <br>
+		<div id = "scatterPlot"></div>
+		<script>
+			//svg setup
+			const svgH = 700;
+			const svgW = 700;
+			const margins = {top: 50, bottom: 50, left: 50, right: 50};
+
+			const svg1 = d3.select("#scatterPlot")
+				.append("svg")
+				.attr("height", svgH)
+				.attr("width", svgW);
+
+			const svg2 = d3.select("#scatterPlot")
+				.append("svg")
+				.attr("height", svgH)
+				.attr("width", svgW);
+
+			//graph setup
+			const H = svgH - margins.top - margins.bottom;
+			const W = svgW - margins.left - margins.right;
+			const padding = 50;
+
+			const graphBlack = svg1.append("g")
+				.attr("transform", `translate(${margins.left}, ${margins.top})`);
+			const graphWhite = svg2.append("g")
+			.attr("transform", `translate(${margins.left}, ${margins.top})`);
+
+			//csv data
+			d3.csv('https://gist.githubusercontent.com/Ahuynh111/1e482a97d70acac597f636b109d9d74e/raw/ea243b11086e226c5f416302f931d3c77e42ac8d/PokemonStats.csv', function(d){
+				return{
+					Attack: +d.Attack,
+					Defense: +d.Defense,
+					Generation: "Gen " + d.Generation
+				};
+			}).then(function(d1){
+				console.log(d1);
+
+// BLACK HAT
+				//Scales x - Defense, y - Attack
+				const blackHatAttack = d3.scaleLog() 
+					.domain(d3.extent(d1, function(z){
+						return z.Attack
+					}))
+					.range([H - padding*2, 0]);
+
+				const Attack = d3.scaleLinear() 
+					.domain(d3.extent(d1, function(z){
+						return z.Attack
+					}))
+					.range([H - padding*2, 0]);
+
+				const blackHatDefense = d3.scaleLinear()
+					.domain(d3.extent(d1, function(z){
+						return z.Defense
+					}))
+					.range([0,W - padding*2]);
+
+				const blackHatColor = d3.scaleOrdinal()
+					.domain(["Gen 1","Gen 2", "Gen 3", "Gen 4", "Gen 5", "Gen 6", "Gen 7", "Gen 8" ])
+					.range(["#F0F0F0", "#D4D4D4", "#B8B8B8", "#9C9C9C", "#F2F3F4", "#DADEDF", "#C3C7C7", "#CCCDC6"])
+
+
+				//Axes
+				graphBlack.append("g")
+					.attr("transform", `translate(${padding}, ${padding})`)
+					.call(d3.axisLeft(Attack).ticks(20));
+
+				graphBlack.append("g")
+					.attr("transform", `translate(${padding}, ${H-padding})`)
+					.call(d3.axisBottom(blackHatDefense).ticks(20));
+
+				//labels
+				graphBlack.append("text")
+					.text("Pokemon Attack is Higher Than Defense Across All Generations")
+					.attr("x", 150)
+					.attr("y", padding/2);
+
+				graphBlack.append("text")
+					.text("Defense")
+					.attr("x", 300)
+					.attr("y", H - 5);
+
+				graphBlack.append("text")
+					.text("Attack")
+					.attr("x", -25)
+					.attr("y", H/2);
+
+				//legend
+				const legendBlack = d3.legendColor()
+					.shape('circle')
+					.orient('vertical')
+					.scale(blackHatColor)
+
+				graphBlack.append("g")
+					.attr("transform", `translate(${W - 10}, 150)`)
+					.call(legendBlack);
+
+				//plot
+				graphBlack.selectAll(".circle")
+					.data(d1)
+					.enter()
+					.append("circle")
+					.attr("class", "circle")
+					.attr("cx", function(z){
+						return(blackHatDefense(z.Defense)+padding)
+					} )
+					.attr("cy", function(z){
+						return(blackHatAttack(z.Attack)+padding)
+					})
+					.attr("r", 7)
+					.attr("fill", function(z){
+						return(blackHatColor(z.Generation))
+					});
+
+// WHITE HAT
+				//Scales x - Defense, y - Attack
+				const whiteHatAttack = d3.scaleLinear() 
+					.domain(d3.extent(d1, function(z){
+						return z.Attack
+					}))
+					.range([H - padding*2, 0]);
+
+				const whiteHatDefense = d3.scaleLinear()
+					.domain(d3.extent(d1, function(z){
+						return z.Defense
+					}))
+					.range([0,W - padding*2]);
+
+				const whiteHatColor = d3.scaleOrdinal()
+					.domain(d3.map(d1, function(z){
+						return(z.Generation)
+					}))
+					.range(d3.schemeTableau10)
+
+
+				//Axes
+				graphWhite.append("g")
+					.attr("transform", `translate(${padding}, ${padding})`)
+					.call(d3.axisLeft(whiteHatAttack).ticks(20));
+
+				graphWhite.append("g")
+					.attr("transform", `translate(${padding}, ${H-padding})`)
+					.call(d3.axisBottom(whiteHatDefense).ticks(20));
+
+				//labels
+				graphWhite.append("text")
+					.text("Pokemon Attack vs Defense Across All Generations")
+					.attr("x", 150)
+					.attr("y", padding/2);
+
+				graphWhite.append("text")
+					.text("Defense")
+					.attr("x", 300)
+					.attr("y", H - 5);
+
+				graphWhite.append("text")
+					.text("Attack")
+					.attr("x", -25)
+					.attr("y", H/2);
+
+				//legend
+				const legendWhite = d3.legendColor()
+					.shape('circle')
+					.orient('vertical')
+					.scale(whiteHatColor)
+
+				graphWhite.append("g")
+					.attr("transform", `translate(${W - 10}, 150)`)
+					.call(legendWhite);
+
+				//plot
+				graphWhite.selectAll(".circle")
+					.data(d1)
+					.enter()
+					.append("circle")
+					.attr("class", "circle")
+					.attr("cx", function(z){
+						return(whiteHatDefense(z.Defense)+padding)
+					} )
+					.attr("cy", function(z){
+						return(whiteHatAttack(z.Attack)+padding)
+					})
+					.attr("r", 3)
+					.attr("stroke", "gray")
+					.attr("fill", function(z){
+						return(whiteHatColor(z.Generation))
+					});
+			})
+		</script>
+		<p> The scatter plot on the left is misleading due to it's weird scale in color and axes. To start off, the color scale is extremely difficult to read and is overall unhelpful. It reports 8 different generations when the data only has 6 generations. The colors chosen for each generation are similar to one another, making it difficult to distinguish on the plot. For example, generation 2 and generation 6 are pretty much identical. Generation 1 and 5 are also very similar and blend into the background. This confuses the audience where generational clusters would be, and they only percieve a large gray blob. The points are also too large and do not have an outline, making it hard to pinpoint specific pokemon stats. Moving on to the axes, the attack data had a log scale applied. However, this is not indicated anywhere on the plot. This creates the appearance that attack tends to be higher than defense for all Pokemon regardless of generation. The title also pushes that narrative.</p>
 		<br>
+		<p> The scatter plot on the right is not misleading. Compared to the black hat plot, this scatter plot has a color scale that is much easier to read and is correct. The colors for each generation are distinct from one another and are evenly portrayed (no color is more important than others). There are exactly 6 generations as indicated in the data and each point is easy to read. The points are reasonably sized and can be individually distinguised due to the outline of each point. The axes have no transformations that are not communicated about. From this, we can see that Attack and Defense have a relatively linear positive correlation with one another. The left plot indicates a logistically growth that will eventually plateu. The title and axes labels are clearly labeled and do not indicate any sort of bias or narrative to push. </p>
+		<br>
+		<p> Assignment 11 <br>
 	</body>
 </html>
